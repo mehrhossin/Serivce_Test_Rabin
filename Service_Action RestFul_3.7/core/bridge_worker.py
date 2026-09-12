@@ -38,6 +38,15 @@ from core.node_registry import NodeRegistry
 from core.feedback import FeedbackTracker
 from core.ota_session import OtaSession
 
+# ── bus logger (فقط برای عیب‌یابی) ──────────────────────────────────────────
+try:
+    import core.bus_logger as _blog
+    _BUS_LOG = True
+except ImportError:
+    _BUS_LOG = False
+
+
+
 TX_INTER_FRAME_DELAY_S = 0.010
 RX_TO_TX_TURNAROUND_S  = 0.010
 LOOP_SLEEP_S           = 0.0005
@@ -295,6 +304,9 @@ class BridgeWorker(threading.Thread):
         # ── ۴. ارسال ─────────────────────────────────────────────────────────
         pkt = build_frame(addr, cmd, data)
         ok  = self.link.send(pkt)
+        # ✅ لاگ TX
+        if _BUS_LOG:
+            _blog.log_tx(self.bridge_id, addr, cmd, data, tag, ok)
         self._on_event("tx", {
             "bridge_id": self.bridge_id,
             "addr":      addr,
@@ -316,14 +328,23 @@ class BridgeWorker(threading.Thread):
             pkt, self._rx_buf = parse_frame(self._rx_buf)
             if not pkt:
                 break
-            if DEBUG_RX:
-                self._on_event("rx_parsed_debug", {
-                    "bridge_id": self.bridge_id,
-                    "addr":      f"0x{pkt['addr']:02X}",
-                    "cmd":       f"0x{pkt['cmd']:02X}",
-                    "cmd_name":  CMD_NAMES.get(pkt['cmd'], '???'),
-                    "data_hex":  pkt['data'].hex(" ").upper(),
-                })
+            # if DEBUG_RX:
+            #     self._on_event("rx_parsed_debug", {
+            #         "bridge_id": self.bridge_id,
+            #         "addr":      f"0x{pkt['addr']:02X}",
+            #         "cmd":       f"0x{pkt['cmd']:02X}",
+            #         "cmd_name":  CMD_NAMES.get(pkt['cmd'], '???'),
+            #         "data_hex":  pkt['data'].hex(" ").upper(),
+            #     })
+
+            # ✅ لاگ RX
+            if _BUS_LOG:
+                _blog.log_rx(
+                    self.bridge_id,
+                    pkt["addr"],
+                    pkt["cmd"],
+                    pkt["data"],
+                )
             self._on_event("rx", {"bridge_id": self.bridge_id, **pkt})
             self._auto_dispatch(pkt)
 

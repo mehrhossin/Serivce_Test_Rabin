@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import sys
 import time
+import core.bus_logger as bus_logger
+bus_logger.init("bus_traffic.log")   # ← قبل از ساخت RBusService
 
 from service import RBusService
 from game_bridge import GameBridgeServer
@@ -28,10 +30,10 @@ from core.rest_api import RestApiServer
 
 # بریج‌های واقعی (طبق مموری): Bridge-1..5 → 192.168.1.7..11
 BRIDGES = [
-    ("Bridge-1", "192.168.1.215",  5000),
-    # ("Bridge-2", "192.168.1.211",  5000),
-    # ("Bridge-3", "192.168.1.212",  5000),
-    # ("Bridge-4", "192.168.1.213", 5000),
+    ("Bridge-1", "192.168.1.211",  5000),
+     ("Bridge-2", "192.168.1.212",  5000),
+     ("Bridge-3", "192.168.1.213",  5000),
+     ("Bridge-4", "192.168.1.214", 5000),
     # ("Bridge-5", "192.168.1.214", 5000),
 ]
 

@@ -176,7 +176,7 @@ ACTIVE_TOUCH_CHANNELS  = (0, 1)
 
 # ---- تنظیمات زمان‌بندی سیستم -----------------------------------------------
 POLL_INTERVAL_S      = 0.05
-POLL_TIMEOUT_S       = 0.015
+POLL_TIMEOUT_S       = 0.08
 DISCOVERY_INTERVAL_S = 10.0
 FEEDBACK_TIMEOUT_S   = 0.5
 

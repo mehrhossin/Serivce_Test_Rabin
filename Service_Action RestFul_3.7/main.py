@@ -10,6 +10,8 @@
 """
 
 import sys
+import core.bus_logger as bus_logger
+bus_logger.init("bus_traffic.log")   # ← قبل از ساخت RBusService
 
 from PyQt5.QtWidgets import QApplication
 

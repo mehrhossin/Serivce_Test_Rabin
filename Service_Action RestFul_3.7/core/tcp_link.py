@@ -41,7 +41,7 @@ class TCPLink:
             s.settimeout(timeout)
             s.connect((host, port))
             # timeout کوتاه برای حلقه read تا blocking نشود
-            s.settimeout(0.05)
+            s.settimeout(0.002)
             # غیرفعال کردن Nagle برای کاهش تأخیر در RS485
             s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             # v6.0: KeepAlive لینوکس+ویندوز (USR هر 2 ثانیه قطع می‌کرد)

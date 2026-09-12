@@ -1,0 +1,949 @@
+
+
+### قدم ۱: دریافت توکن (Login)
+POST http://127.0.0.1:9001/api/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "Admin@123" }
+
+
+
+
+
+###🎯 Action Game General — L{color}{mask}{chk}
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":    "Action",
+  "Bridge":  0,
+  "General": "L17h"
+}
+
+
+### 🎯 Action Game Reset
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{"Game":"Action","Bridge":0,"Reset":true}
+
+###🎯 Action Game Idle
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{"Game":"Action","Bridge":0,"Idle":true}
+
+###🎯 Action Game SetKey — S{node}{color}
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{"Game":"Action","Bridge":0,"SetKey":"S42"}
+
+
+
+
+### ═══════════════════════════════════════════
+### 2. 🌈 Rainbow / Preparation (NNN)
+### Opcode: 0x27 [01] — آماده‌سازی نودها
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":    "Hide",
+  "Bridge":  1,
+  "General": "NNN"
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Hide",
+#     "bridges": ["Bridge-1"],
+#     "results": [
+#       {
+#         "ok": true,
+#         "field": "General",
+#         "bridge": "Bridge-1"
+#       }
+#     ]
+#   }
+# }
+
+### ═══════════════════════════════════════════
+### 3. 🔢 Display Number — نمایش عدد روی نود
+### Opcode: 0x50
+### فرمت: R{c}{o}{t}{p}
+###   c : color     — 1=Blue 2=Yellow 3=Pink 4=Orange 5=White
+###   o : ones      — رقم یکان  (0-9)
+###   t : tens      — رقم دهگان (0-9)
+###   p : checksum  — chr( ord(c) + ord(o) + ord(t) - 128 )
+###
+### ⚠️  فیلد key وجود ندارد — نود از طریق Arm مشخص می‌شود
+###
+### مثال زیر: color=Blue(1), عدد=23 → ones=3, tens=2
+###   p = chr(49+51+50-128) = chr(22) = \u0016
+### ═══════════════════════════════════════════
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":    "Hide",
+  "Bridge":  1,
+  "General": "R\u0031\u0033\u0032\u0016",
+  "key":     0,
+  "addr":    0
+}
+
+
+
+
+
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Hide",
+#     "bridges": [
+#       "Bridge-1"
+#     ],
+#     "results": [
+#       {
+#         "ok": true,
+#         "bridge": "Bridge-1",
+#         "opcode": "0x50",
+#         "payload": "000000ff0203",
+#         "field": "General"
+#       }
+#     ]
+#   }
+# }
+
+
+
+### ═══════════════════════════════════════════
+### 4. ⏱️ Arm — آماده کردن نود برای بازی
+### Opcode: 0x51
+### پارامترها:
+###   key   : شماره نود (0-11)
+###   color : 1=Blue 2=Yellow 3=Pink 4=Orange 5=White
+###   sec   : زمان (ثانیه)
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":    "Hide",
+  "Bridge":  1,
+  "General": "R\u0031\u0033\u0032\u0016",
+  "key":     1
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Hide",
+#     "bridges": ["Bridge-1"],
+#     "results": [
+#       {
+#         "ok": true,
+#         "field": "Arm",
+#         "bridge": "Bridge-1",
+#         "nodes": [1]
+#       }
+#     ]
+#   }
+# }
+
+
+### ═══════════════════════════════════════════
+### 5. ▶️ Start — شروع بازی
+### Opcode: 0x52
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":   "Hide",
+  "Bridge": 1,
+  "Start":  true
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Hide",
+#     "bridges": ["Bridge-1"],
+#     "results": [
+#       {
+#         "ok": true,
+#         "field": "Start",
+#         "bridge": "Bridge-1"
+#       }
+#     ]
+#   }
+# }
+
+
+### ═══════════════════════════════════════════
+### 6. ❌ Fail — شکست برای یک نود خاص
+### Opcode: 0x53
+### پارامترها:
+###   key : شماره نود (0-11)
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":   "Hide",
+  "Bridge": 1,
+  "Fail":   true,
+  "key":    0
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Hide",
+#     "bridges": [
+#       "Bridge-1"
+#     ],
+#     "results": [
+#       {
+#         "ok": true,
+#         "bridge": "Bridge-1",
+#         "opcode": "0x53",
+#         "payload": "00",
+#         "field": "Fail"
+#       }
+#     ]
+#   }
+# }
+
+
+### ═══════════════════════════════════════════
+### 7. 🚫 Cancel — لغو بازی
+### Opcode: 0x56
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":   "Hide",
+  "Bridge": 1,
+  "Cancel": true
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Hide",
+#     "bridges": ["Bridge-1"],
+#     "results": [
+#       {
+#         "ok": true,
+#         "field": "Cancel",
+#         "bridge": "Bridge-1"
+#       }
+#     ]
+#   }
+# }
+
+
+### ═══════════════════════════════════════════
+### 8. 🏃 Motion — تشخیص حرکت
+### Motion=1 → Opcode: 0x54 (سطح ۱)
+### Motion=2 → Opcode: 0x55 (سطح ۲)
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":   "Hide",
+  "Bridge": 1,
+  "Motion": 1
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Hide",
+#     "bridges": ["Bridge-1"],
+#     "results": [
+#       {
+#         "ok": true,
+#         "field": "Motion",
+#         "bridge": "Bridge-1"
+#       }
+#     ]
+#   }
+# }
+
+
+### ═══════════════════════════════════════════
+### 9. 🔄 Reset — ریست کامل نودها
+### Opcode: 0x02
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":   "Hide",
+  "Bridge": 1,
+  "Reset":  true
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Hide",
+#     "bridges": ["Bridge-1"],
+#     "results": [
+#       {
+#         "ok": true,
+#         "field": "Reset",
+#         "bridge": "Bridge-1"
+#       }
+#     ]
+#   }
+# }
+
+
+
+### AllOff برای همه نودها  (خاموش شدن الی ای دی همه)
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":   "Hide",
+  "Bridge": 1,
+  "AllOff": true
+}
+
+
+#### پاسخ:
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Hide",
+#     "bridges": [
+#       "Bridge-1"
+#     ],
+#     "results": [
+#       {
+#         "ok": true,
+#         "bridge": "Bridge-1",
+#         "opcode": "0x06",
+#         "payload": "ff",
+#         "field": "AllOff"
+#       }
+#     ]
+#   }
+# }
+
+###
+
+
+
+
+
+
+
+### ═══════════════════════════════════════════
+### 10. 📊 وضعیت نودها
+### ═══════════════════════════════════════════
+
+GET http://127.0.0.1:9001/api/nodes
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+# {
+#   "ok": true,
+#   "count": 12,
+#   "nodes": [
+#     { "B": 1, "N": 1,  "C1": 1, "C2": 0 },
+#     { "B": 1, "N": 2,  "C1": 1, "C2": 0 },
+#     ...
+#     { "B": 1, "N": 12, "C1": 0, "C2": 0 }
+#   ]
+# }
+
+
+
+
+
+
+### 4. 🌀 Vibron Game ("Game": "Vibron")
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":        "Vibron",
+  "Bridge":      0,
+  "General":     "",
+  "SetKey":      "",
+  "ActiveBoard": false,
+  "Reset":       false,
+  "Idle":        false,
+  "Error":       false,
+  "GridEffect":  "",
+  "TimerStart":  false,
+  "TimerStop":   false
+}
+### 5.🌀 Vibron پارامترهای اضافه برای TimerStart:
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game": "Vibron", "Bridge": 0,
+  "TimerStart": true,
+  "color": "1",
+  "sec": 10,
+  "key": 0
+}
+
+
+
+### ═══════════════════════════════════════════
+### RBUS Tesla Game — REST API Endpoints
+### Host: 127.0.0.1:9001
+### Token: RBUS-TEST-TOKEN-0001
+### ═══════════════════════════════════════════
+
+
+### ═══════════════════════════════════════════
+### 1. ⚡ TeslaStart — شروع افکت برق
+### Opcode: 0x70
+### ═══════════════════════════════════════════
+
+
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":       "Tesla",
+  "Bridge":     1,
+  "TeslaStart": true
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Tesla",
+#     "bridges": [
+#       "Bridge-1"
+#     ],
+#     "results": [
+#       {
+#         "ok": true,
+#         "bridge": "Bridge-1",
+#         "opcode": "0x70",
+#         "payload": "",
+#         "field": "TeslaStart"
+#       }
+#     ]
+#   }
+# }
+
+
+### ═══════════════════════════════════════════
+### 2. 🛑 LightningFx Stop — توقف افکت برق
+### Opcode: 0x71
+### LightningFx: false → stop
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":        "Tesla",
+  "Bridge":      1,
+  "LightningFx": false
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Tesla",
+#     "bridges": [
+#       "Bridge-1"
+#     ],
+#     "results": [
+#       {
+#         "ok": true,
+#         "bridge": "Bridge-1",
+#         "opcode": "0x71",
+#         "payload": "",
+#         "field": "LightningFx"
+#       }
+#     ]
+#   }
+# }
+
+### ═══════════════════════════════════════════
+### 3. 💧 DropArm — آماده کردن Drop
+### Opcode: 0x72
+### پارامترها:
+###   key     : 0 
+###   addr    : 3  شماره نود (بین نود 1 تا 16)
+###   color   : 1=Blue 2=Yellow 3=Pink 4=Orange 5=White
+###   sec     : زمان (ثانیه)
+###   drops   : تعداد قطره (1-8)
+###   trail   : طول دنباله (1-8)
+###   act_pct : درصد فعال‌سازی (0-100)
+###   flags   : فلگ رفتار (0 یا 1)
+###   length  : طول مسیر (تعداد پیکسل)
+### ═══════════════════════════════════════════
+
+
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":    "Tesla",
+  "Bridge":  1,
+  "DropArm": true,
+  "key":     0,
+  "addr":6,
+  "color":   "3",
+  "sec":     5,
+  "drops":   1,
+  "trail":   10,
+  "act_pct": 80,
+  "flags":   1,
+  "length":  5
+}
+
+
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Tesla",
+#     "bridges": [
+#       "Bridge-1"
+#     ],
+#     "results": [
+#       {
+#         "ok": true,
+#         "bridge": "Bridge-1",
+#         "opcode": "0x72",
+#         "payload": "00ff008005010a500105",
+#         "field": "DropArm"
+#       }
+#     ]
+#   }
+# }
+
+
+### ═══════════════════════════════════════════
+### 3. 💧 DropArm — آماده کردن Drop برای همه نودها بردکست
+### Opcode: 0x72
+### پارامترها:
+###   key     : 0 بردکست برای همه نودها
+###   color   : 1=Blue 2=Yellow 3=Pink 4=Orange 5=White
+###   sec     : زمان (ثانیه)
+###   drops   : تعداد قطره (1-8)
+###   trail   : طول دنباله (1-8)
+###   act_pct : درصد فعال‌سازی (0-100)
+###   flags   : فلگ رفتار (0 یا 1)
+###   length  : طول مسیر (تعداد پیکسل)
+### ═══════════════════════════════════════════
+
+
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":    "Tesla",
+  "Bridge":  1,
+  "DropArm": true,
+  "key":     0,
+  "color":   "3",
+  "sec":     5,
+  "drops":   1,
+  "trail":   7,
+  "act_pct": 80,
+  "flags":   1,
+  "length":  5
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Tesla",
+#     "bridges": [
+#       "Bridge-1"
+#     ],
+#     "results": [
+#       {
+#         "ok": true,
+#         "bridge": "Bridge-1",
+#         "opcode": "0x72",
+#         "payload": "00ff0080050107500105",
+#         "field": "DropArm"
+#       }
+#     ]
+#   }
+# }
+
+### ═══════════════════════════════════════════
+### 4. 📊 DropStatus — وضعیت Drop
+### Opcode: 0x73
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":       "Tesla",
+  "Bridge":     1,
+  "DropStatus": true
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Tesla",
+#     "bridges": [
+#       "Bridge-1"
+#     ],
+#     "results": [
+#       {
+#         "ok": true,
+#         "bridge": "Bridge-1",
+#         "opcode": "0x73",
+#         "payload": "",
+#         "field": "DropStatus"
+#       }
+#     ]
+#   }
+# }
+
+
+### ═══════════════════════════════════════════
+### 5. ❌ DropCancel — لغو Drop
+### Opcode: 0x74
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":       "Tesla",
+  "Bridge":     1,
+  "DropCancel": true
+}
+
+### ─── پاسخ ───────────────────────────────────
+
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Tesla",
+#     "bridges": [
+#       "Bridge-1"
+#     ],
+#     "results": [
+#       {
+#         "ok": true,
+#         "bridge": "Bridge-1",
+#         "opcode": "0x74",
+#         "payload": "",
+#         "field": "DropCancel"
+#       }
+#     ]
+#   }
+# }
+
+### ═══════════════════════════════════════════
+
+
+### ═══════════════════════════════════════════
+### 6. 🔄 Reset — ریست کامل نودها
+### Opcode: 0x02
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":   "Tesla",
+  "Bridge": 1,
+  "Reset":  true
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Tesla",
+#     "bridges": [
+#       "Bridge-1"
+#     ],
+#     "results": [
+#       {
+#         "ok": true,
+#         "bridge_id": "Bridge-1",
+#         "effect": "reset",
+#         "opcode": "0x02",
+#         "field": "Reset"
+#       }
+#     ]
+#   }
+# }
+
+
+### ═══════════════════════════════════════════
+### 7. 🌈 Idle — رنگین‌کمان / آماده‌باش
+### Opcode: 0x27 [01]
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+
+{
+  "Game":        "Tesla",
+  "Bridge":      1,
+  "Idle":        true,
+  "pixel_count": 100
+}
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+# {
+#   "statusCode": 200,
+#   "message": "success",
+#   "ok": true,
+#   "applied": {
+#     "ok": true,
+#     "game": "Tesla",
+#     "bridges": [
+#       "Bridge-1"
+#     ],
+#     "results": [
+#       {
+#         "ok": true,
+#         "bridge": "Bridge-1",
+#         "opcode": "0x27",
+#         "payload": "08",
+#         "field": "Idle"
+#       }
+#     ]
+#   }
+# }
+
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Game":    "Tesla",
+  "Bridge":  1,
+  "DropArm": true,
+  "key":     0,
+  "color":   "0080FF",
+  "sec":     5,
+  "drops":   2,
+  "trail":   7,
+  "act_pct": 80,
+  "flags":   1,
+  "length":  10
+}
+
+### ═══════════════════════════════════════════
+### 8. 📊 وضعیت نودها
+### ═══════════════════════════════════════════
+
+GET http://127.0.0.1:9001/api/nodes
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 200 OK
+# {
+#   "ok": true,
+#   "count": 12,
+#   "nodes": [
+#     { "B": 1, "N": 1,  "C1": 1, "C2": 0 },
+#     { "B": 1, "N": 2,  "C1": 0, "C2": 0 },
+#     ...
+#     { "B": 1, "N": 12, "C1": 0, "C2": 0 }
+#   ]
+# }
+
+
+### ═══════════════════════════════════════════
+### 9. 📡 رویدادهای Real-time
+### ═══════════════════════════════════════════
+
+GET http://127.0.0.1:9001/api/events/drain?wait=80
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+
+### ─── پاسخ (وقتی رویداد هست) ────────────────
+# HTTP/1.1 200 OK
+# {
+#   "ok": true,
+#   "events": [
+#     {
+#       "kind": "game",
+#       "data": {
+#         "bridge_id": "Bridge-1",
+#         "addr":      1,
+#         "event":     "DROP_HIT",
+#         "seq":       42,
+#         "ch":        1
+#       }
+#     }
+#   ]
+# }
+
+### ─── پاسخ (وقتی رویداد نیست) ───────────────
+# HTTP/1.1 200 OK
+# {
+#   "ok": true,
+#   "events": []
+# }
+
+
+### ═══════════════════════════════════════════
+### ❌ نمونه خطا — Game اشتباه یا فیلد ناقص
+### ═══════════════════════════════════════════
+
+PUT http://127.0.0.1:9001/api/nodes/set
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+Content-Type: application/json
+
+{
+  "Bridge": 1,
+  "DropArm": true
+}
+
+### ─── پاسخ ───────────────────────────────────
+# HTTP/1.1 400 Bad Request
+# {
+#   "statusCode": 400,
+#   "message":   "Game field is required",
+#   "ok":        false
+# }
+
+
+
+### ۸) مرحله ۵ — خواندن وضعیت نودها
+
+GET http://127.0.0.1:9001/api/nodes
+Authorization: Bearer RBUS-TEST-TOKEN-0001
+

@@ -1,0 +1,6 @@
+[19:00:12.527]  🟢 اتصال برقرار شد (POST /api/auth/login OK)
+[19:00:16.083]  📤 General L17h → Bridge-1 | رنگ آبی | s=7→[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12] | ✅ {"statusCode": 200, "message": "success", "ok": true, "applied": {"ok": true, "game": "Action", "bridges": ["Bridge-1"],
+[19:00:28.841]  🎮 Action.General L11b → ['Bridge-1'] | Bridge-1:نودها=[1, 2, 3, 4] ✅
+[19:00:30.384]  🎮 Action.General L11b → ['Bridge-1'] | Bridge-1:نودها=[1, 2, 3, 4] ✅
+[19:00:30.580]  🎮 Action.General L11b → ['Bridge-1'] | Bridge-1:نودها=[1, 2, 3, 4] ✅
+[19:00:35.141]  🎮 Action.General L17h → ['Bridge-1'] | Bridge-1:نودها=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12] ✅

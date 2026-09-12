@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RBUS REST Test — بخش اکشن</title>
+<style>
+  :root{--bg:#0e1116;--panel:#171b22;--line:#2a2f3a;--txt:#e6e9ef;--mut:#8b93a3;--ok:#3fb950;--err:#f85149;--acc:#58a6ff;}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:var(--txt)}
+  header{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  header h1{font-size:17px;margin:0}
+  header .url{color:var(--mut);font-family:monospace;font-size:13px}
+  main{max-width:1100px;margin:18px auto;padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){main{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card h2{font-size:14px;margin:0 0 12px;color:var(--acc)}
+  label{display:block;font-size:12px;color:var(--mut);margin:8px 0 4px}
+  input,textarea,select{width:100%;background:#0b0e13;border:1px solid var(--line);border-radius:8px;color:var(--txt);padding:8px 10px;font-family:monospace;font-size:13px}
+  textarea{min-height:64px;resize:vertical}
+  .row{display:flex;gap:10px;align-items:end}
+  .row>*{flex:1}
+  button{background:var(--acc);color:#0b0e13;border:0;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+  .out{background:#0b0e13;border:1px solid var(--line);border-radius:8px;padding:10px;font-family:monospace;font-size:12px;min-height:120px;white-space:pre-wrap;word-break:break-all}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;margin-left:6px}
+  .tag.g{background:rgba(63,185,80,.15);color:var(--ok)}
+  .tag.r{background:rgba(248,81,73,.15);color:var(--err)}
+  .steps{font-size:12px;color:var(--mut);line-height:1.8}
+  .steps b{color:var(--txt)}
+  .checksum{color:var(--mut);font-size:12px}
+  code{background:#0b0e13;padding:1px 5px;border-radius:4px;color:var(--acc)}
+  .flex{display:flex;gap:8px;align-items:center;justify-content:space-between}
+  .chk{color:var(--mut);font-size:11px}
+  /* ── لایو مانیتور ── */
+  .monitor{grid-column:1/-1;border:1px solid var(--line);border-radius:12px;padding:16px;background:var(--panel)}
+  .monitor .top{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  .statbox{background:#0b0e13;border:1px solid var(--line);border-radius:10px;padding:8px 14px;min-width:120px}
+  .statbox .k{font-size:11px;color:var(--mut)}
+  .statbox .v{font-size:20px;font-weight:800;font-family:monospace}
+  .statbox .v.green{color:var(--ok)} .statbox .v.red{color:var(--err)} .statbox .v.acc{color:var(--acc)}
+  .timer-pill{background:#0b0e13;border:1px solid var(--line);border-radius:999px;padding:8px 16px;font-family:monospace;font-size:15px}
+  .lv{color:var(--mut);font-size:11px;margin:4px 0}
+  .seg{font-family:monospace;font-size:12px;line-height:1.7}
+  .off{color:#4a5366}
+  .on1{color:var(--acc)}
+  .on2{color:var(--ok)}
+  .pulse{animation:pulse 1.2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎮 RBUS — REST Test (بخش اکشن)</h1>
+  <span class="url">http://127.0.0.1:9001/api</span>
+</header>
+
+<main>
+  <!-- ═══════════ LOGIN ═══════════ -->
+  <div class="card">
+    <h2>۱) ورود (auth) — دریافت توکن</h2>
+    <div class="steps">
+      <b>POST /api/auth/login</b> — توکن را می‌گیرد. سپس کپی‌اش کن در «توکن» پنلِ بعد.<br>
+      <code>{"username":"admin","password":"Admin@123"}</code>
+    </div>
+    <label>username</label><input id="login_u" value="admin">
+    <label>password</label><input id="login_p" value="Admin@123">
+    <div style="margin-top:10px"><button onclick="doLogin()">POST /auth/login</button></div>
+    <label>پاسخ</label>
+    <div class="out" id="out_login">—</div>
+  </div>
+
+  <!-- ═══════════ NODES SET ═══════════ -->
+  <div class="card">
+    <h2>۲) اعمال شرایط اکشن</h2>
+    <div class="steps">
+      <b>PUT /api/nodes/set</b> — ۲ رشته + ۳ بولین.<br>
+      <code>General</code>: <code>L{c}{s}{p}</code>  →  L + <b>رنگ(c)</b> + <b>ماسک(s)</b> + چک‌سام(p).<br>
+      مثال: <code>L11b</code> = رنگ۱(آبی)+ماسک۱(نودهای1..4) · <code>L12c</code> = رنگ۱+ماسک۲(نودهای5..10) · <code>L14e</code> = رنگ۱+ماسک۴(نود12).<br>
+      <b>ماسک s (۱۶بیتی):</b> بیت۰=نودهای1..4 · بیت۱=نودهای5..10 · بیت۲=نود12 · ترکیبی: 3=1+2, 5=1+4, 6=2+4, 7=همه.<br>
+      <code>SetKey</code>: <code>S{s}{c}</code> → S + نود(0..12) + رنگ(1..5)، مثال <code>S44</code> = نود4 نارنجی.
+    </div>
+    <label>Game (اجباری — v5.1)</label>
+    <select id="n_game"><option>Action</option><option>Hide</option><option>Vibron</option><option>Tesla</option></select>
+    <label>Bridge (0=همه)</label>
+    <select id="n_bridge_num">
+      <option value="0">0 — همهٔ بریج‌ها</option>
+      <option value="1" selected>1</option><option value="2">2</option>
+      <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+    </select>
+    <label>General</label><input id="n_general" value="L11b">
+    <label>SetKey</label><input id="n_setkey" value="S44">
+    <label>GridEffect</label>
+    <select id="n_grid"><option value=""></option><option>EEE</option><option>SSS</option><option>LLL</option><option>MMM</option></select>
+    <div class="row">
+      <div><label>Arm</label><select id="n_arm"><option>false</option><option>true</option></select></div>
+      <div><label>Start</label><select id="n_start"><option>false</option><option>true</option></select></div>
+      <div><label>Fail</label><select id="n_fail"><option>false</option><option>true</option></select></div>
+      <div><label>Cancel</label><select id="n_cancel"><option>false</option><option>true</option></select></div>
+      <div><label>Motion</label><select id="n_motion"><option>0</option><option>1</option><option>2</option></select></div>
+      <div><label>TimerStart</label><select id="n_tstart"><option>false</option><option>true</option></select></div>
+      <div><label>TimerStop</label><select id="n_tstop"><option>false</option><option>true</option></select></div>
+      <div><label>TeslaStart</label><select id="n_tesla"><option>false</option><option>true</option></select></div>
+      <div><label>LightningFx</label><select id="n_lfx"><option value="">(غایب)</option><option value="true">true</option><option value="false">false</option></select></div>
+      <div><label>DropArm</label><select id="n_droparm"><option>false</option><option>true</option></select></div>
+      <div><label>DropCancel</label><select id="n_dropc"><option>false</option><option>true</option></select></div>
+      <div><label>DropStatus</label><select id="n_drops"><option>false</option><option>true</option></select></div>
+    </div>
+    <div class="row">
+      <div><label>color (پالت 1..5 یا hex6)</label><input id="n_color" value="1" size="7"></div>
+      <div><label>key</label><input id="n_key" type="number" value="0" min="0" max="15" style="width:55px"></div>
+      <div><label>sec</label><input id="n_sec" type="number" value="30" min="1" max="255" style="width:60px"></div>
+      <div><label>drops</label><input id="n_drops2" type="number" value="4" min="1" max="8" style="width:50px"></div>
+      <div><label>trail</label><input id="n_trail" type="number" value="7" min="1" max="16" style="width:50px"></div>
+      <div><label>act%</label><input id="n_act" type="number" value="85" min="1" max="100" style="width:50px"></div>
+      <div><label>flags</label><input id="n_flags" type="number" value="1" min="0" max="255" style="width:50px"></div>
+      <div><label>length</label><input id="n_length" type="number" value="13" min="1" max="32" style="width:50px"></div>
+    </div>
+    <div class="row">
+      <div><label>ActiveBoard</label>
+        <select id="n_active"><option value="true">true</option><option value="false">false</option></select></div>
+      <div><label>Reset</label>
+        <select id="n_reset"><option value="false">false</option><option value="true">true</option></select></div>
+      <div><label>Idle</label>
+        <select id="n_idle"><option value="false">false</option><option value="true">true</option></select></div>
+    </div>
+    <label>توکن (Bearer)</label><input id="n_token" value="RBUS-TEST-TOKEN-0001">
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button onclick="doNodesSet()">PUT /nodes/set</button>
+      <button class="ghost" onclick="fillChecksum()">∿ چک‌سام را خودکار پر کن</button>
+    </div>
+    <div class="chk" id="n_checksum">—</div>
+    <label>پاسخ</label>
+    <div class="out" id="out_set">—</div>
+
+  <!-- ═══════════ GET NODES ═══════════ -->
+  <div class="card">
+    <h2>۳) دریافت وضعیت نودها</h2>
+    <div class="steps">
+      <b>GET /api/nodes</b> — <code>{B,N,C1,C2}</code> برای هر نود.<br>
+      این یعنی «ارسال/دریافت» تو را چک می‌کنیم؛ بدون Unity.
+    </div>
+    <label>توکن (Bearer)</label><input id="g_token" value="RBUS-TEST-TOKEN-0001">
+    <label>فیلتر بریج (v5.1: ?bridge=N)</label>
+    <select id="g_bridge">
+      <option value="">(همه)</option><option value="1">1</option>
+      <option value="2">2</option><option value="3">3</option>
+      <option value="4">4</option><option value="5">5</option>
+    </select>
+    <div style="margin-top:10px"><button onclick="doGetNodes()">GET /nodes</button></div>
+    <label>پاسخ</label>
+    <div class="out" id="out_get">—</div>
+  </div>
+
+  <!-- ═══════════ لایو مانیتور (تایمر خودکار) ═══════════ -->
+  <div class="monitor">
+    <h2 style="margin:0 0 10px;font-size:15px;color:var(--acc)">📡 لایو مانیتور — به‌روزرسانی خودکار</h2>
+    <div class="top">
+      <div>
+        <label style="margin:0">هر چند ثانیه؟</label>
+        <select id="mon_period" style="width:auto">
+          <option value="1">۱ ثانیه</option>
+          <option value="2">۲ ثانیه</option>
+          <option value="3" selected>۳ ثانیه</option>
+          <option value="5">۵ ثانیه</option>
+          <option value="10">۱۰ ثانیه</option>
+        </select>
+      </div>
+      <div class="timer-pill" id="mon_timer">⏱ --</div>
+      <button id="mon_toggle" onclick="toggleMonitor()">⏸ توقف مانیتور</button>
+      <button class="ghost" onclick="refreshNow()">⟳ فوری</button>
+    </div>
+    <div class="statbox" style="display:inline-block">
+      <div class="k">کل نودها</div><div class="v acc" id="mon_total">0</div>
+    </div>
+    <div class="statbox" style="display:inline-block">
+      <div class="k">آنلاین (C1)</div><div class="v green" id="mon_online">0</div>
+    </div>
+    <div class="statbox" style="display:inline-block">
+      <div class="k">لمس/ADC (C2)</div><div class="v" id="mon_adc">0</div>
+    </div>
+    <div class="statbox" style="display:inline-block">
+      <div class="k">پاسخ (ms)</div><div class="v" id="mon_ms">—</div>
+    </div>
+    <div class="statbox" style="display:inline-block">
+      <div class="k">وضعیت</div><div class="v green" id="mon_status">OK</div>
+    </div>
+
+    <div class="lv" style="margin-top:12px">🗺 نودها (B.نود  ·  C1/C2):</div>
+    <div class="seg" id="mon_map">(در انتظار اولین دریافت…)</div>
+  </div>
+</main>
+
+<script>
+const BASE='http://127.0.0.1:9001/api';
+function setOut(id,s){const el=document.getElementById(id);el.textContent=s||'—';}
+async function req(method,path,body,token){
+  const h={'Content-Type':'application/json'};
+  if(token)h['Authorization']='Bearer '+token;
+  const r=await fetch(BASE+path,{method,headers:h,body:body?JSON.stringify(body):undefined});
+  const t=await r.text();
+  let j;try{j=JSON.parse(t)}catch(e){j=t}
+  return {status:r.status,json:j};
+}
+function show(id,status,json){
+  const el=document.getElementById(id);
+  const ok=(status>=200&&status<300)?'g':'r';
+  el.textContent=`HTTP ${status}  ${ok==='g'?'✓':'✗'}\n`+JSON.stringify(json,null,2);
+}
+
+async function doLogin(){
+  const u=document.getElementById('login_u').value;
+  const p=document.getElementById('login_p').value;
+  const r=await req('POST','/auth/login',{username:u,password:p});
+  show('out_login',r.status,r.json);
+  if(r.json&&r.json.token){document.getElementById('n_token').value=r.json.token;document.getElementById('g_token').value=r.json.token;}
+}
+// چک‌سام گویش L{c}{s}{p}: ord(c)+ord(s)   ← ترتیب: رنگ(c) دوم، ماسک(s) سوم
+function checksum(c,s){return String.fromCharCode((c.charCodeAt(0)+s.charCodeAt(0))&0xFF);}
+function fillChecksum(){
+  const raw=document.getElementById('n_general').value.trim().toUpperCase();
+  if(raw.length>=3&&raw[0]==='L'){const c=raw[1],s=raw[2];const chk=checksum(c,s);
+    document.getElementById('n_general').value='L'+c+s+chk;
+    document.getElementById('n_checksum').textContent=`رنگ '${c}' + ماسک '${s}' → چک‌سام '${chk}' → L${c+s+chk}`;}
+}
+async function doNodesSet(){
+  // ✅ v6.9 — قرارداد v5.1: Game اجباری + Bridge عددی + فیلدهای بازی‌ها
+  const b={Game:document.getElementById('n_game').value,
+           Bridge:parseInt(document.getElementById('n_bridge_num').value),
+           General:document.getElementById('n_general').value||'',
+           SetKey:document.getElementById('n_setkey').value||'',
+           ActiveBoard:document.getElementById('n_active').value==='true',
+           Reset:document.getElementById('n_reset').value==='true',
+           Idle:document.getElementById('n_idle').value==='true'};
+  const ge=document.getElementById('n_grid').value; if(ge)b.GridEffect=ge;
+  const mo=document.getElementById('n_motion').value; if(mo!=='0')b.Motion=parseInt(mo);
+  const bools=[['Arm','n_arm'],['Start','n_start'],['Fail','n_fail'],['Cancel','n_cancel'],
+               ['TimerStart','n_tstart'],['TimerStop','n_tstop'],['TeslaStart','n_tesla'],
+               ['DropArm','n_droparm'],['DropCancel','n_dropc'],['DropStatus','n_drops']];
+  for(const [f,id] of bools){ if(document.getElementById(id).value==='true')b[f]=true; }
+  const lfx=document.getElementById('n_lfx').value;
+  if(lfx!=='')b.LightningFx=(lfx==='true');
+  const needColor=(b.Arm||b.TimerStart||b.DropArm);
+  if(needColor){ b.color=document.getElementById('n_color').value;
+                 b.key=parseInt(document.getElementById('n_key').value);
+                 b.sec=parseInt(document.getElementById('n_sec').value); }
+  if(b.DropArm){ b.drops=parseInt(document.getElementById('n_drops2').value);
+                 b.trail=parseInt(document.getElementById('n_trail').value);
+                 b.act_pct=parseInt(document.getElementById('n_act').value);
+                 b.flags=parseInt(document.getElementById('n_flags').value);
+                 b.length=parseInt(document.getElementById('n_length').value); }
+  const r=await req('PUT','/nodes/set',b,document.getElementById('n_token').value);
+  show('out_set',r.status,r.json);
+}
+async function doGetNodes(){
+  const bf=document.getElementById('g_bridge').value;
+  const q=bf?('?bridge='+bf):'';
+  const r=await req('GET','/nodes'+q,null,document.getElementById('g_token').value);
+  show('out_get',r.status,r.json);
+}
+
+/* ═══════════════════ لایو مانیتور — تایمر خودکار ═══════════════════ */
+let monOn=false, monTick=0, monInterval=3000;
+const monTimerEl=document.getElementById('mon_timer');
+const monToggleBtn=document.getElementById('mon_toggle');
+
+function setStat(id,text,cls){const el=document.getElementById(id);el.textContent=text;el.className='v'+(cls?' '+cls:'');}
+
+async function refreshNow(){
+  const t0=performance.now();
+  let r;
+  try{
+    r=await req('GET','/nodes',null,document.getElementById('g_token').value);
+  }catch(e){ setStat('mon_status','ERR','red'); monTimerEl.textContent='⏱ !'; return; }
+  const ms=(performance.now()-t0).toFixed(0);
+  setStat('mon_ms',ms+'ms','acc');
+
+  if(r.status!==200){ setStat('mon_status','HTTP '+r.status,'red'); return; }
+  const j=r.json;
+  const nodes=(j.nodes&&Array.isArray(j.nodes))?j.nodes:[];
+  setStat('mon_total',nodes.length,'acc');
+  const c1=nodes.filter(n=>n.C1===1).length;
+  const c2=nodes.filter(n=>n.C2===1).length;
+  setStat('mon_online',c1,'green');
+  setStat('mon_adc',c2,'acc');
+  setStat('mon_status','OK','green');
+
+  // نقشهٔ نودها: هر ردیف بریج B، نودهای آن با وضعیت C1/C2
+  let map='';
+  const byBridge={};
+  nodes.forEach(n=>{(byBridge[n.B]=byBridge[n.B]||[]).push(n);});
+  for(const B of Object.keys(byBridge).sort((a,b)=>a-b)){
+    map+='مربوط به B'+B+': ';
+    byBridge[B].sort((a,b)=>a.N-b.N).forEach(n=>{
+      let cls='off', lbl='.';
+      if(n.C1&&n.C2){cls='on2';lbl='●';}
+      else if(n.C1){cls='on1';lbl='◐';}
+      else if(n.C2){cls='on2';lbl='○';}
+      map+='<span class="'+cls+'">'+lbl+'</span>'+n.N+' ';
+    });
+    map+='&nbsp;&nbsp;';
+  }
+  document.getElementById('mon_map').innerHTML=map||'(هیچ نودی)';
+}
+
+function toggleMonitor(){ (monOn?stopMonitor():startMonitor()); }
+
+function startMonitor(){
+  if(monOn)return; monOn=true;
+  monInterval=(+document.getElementById('mon_period').value)*1000;
+  monToggleBtn.textContent='⏸ توقف مانیتور';
+  document.getElementById('mon_period').disabled=true;
+  monTick=Math.round(monInterval/100);
+  refreshNow();
+  monTimerEl.classList.add('pulse');
+  tickTimer();
+}
+function stopMonitor(){
+  monOn=false; monToggleBtn.textContent='▶ شروع مانیتور';
+  document.getElementById('mon_period').disabled=false;
+  monTimerEl.classList.remove('pulse');
+  monTimerEl.textContent='⏱ --';
+}
+function tickTimer(){
+  if(!monOn)return;
+  monTick--;
+  const sec=(monTick*100/1000);
+  monTimerEl.textContent='⏱ '+(sec<10?sec.toFixed(1):Math.round(sec))+'s';
+  if(monTick<=0){
+    const t0=performance.now();
+    refreshNow().finally(()=>{
+      // زمان پاسخ در refreshNow ست می‌شود؛ فقط شمارنده را ریست کن
+      monTick=Math.round(monInterval/100);
+    });
+  }
+  setTimeout(tickTimer,100);
+}
+</script>
+</body>
+</html>

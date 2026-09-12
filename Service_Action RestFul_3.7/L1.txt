@@ -1,0 +1,78 @@
+-----------------------------------------------------------------تغییر شماره 1
+ تغییر مورد نیاز
+فقط یک جا در action_game.py باید عوض بشه — متد on_service_event:
+
+# قبل از تغییر:
+elif msg_type == "hide_fail":
+    return self._handle_hide_key(data, 0x53, "hide_fail")
+
+# بعد از تغییر:
+elif msg_type == "hide_fail":
+    return self._handle_hide_fail(data)
+
+
+و یه متد جدید اضافه میکنیم (کنار بقیه متدهای Hide):
+
+def _handle_hide_fail(self, data: dict) -> list:
+    """Fail → ابتدا 0x53[key] (پروتکل بازی) سپس 0x27[04,FF,00,00] (افکت Error قرمز)."""
+    bridges = data.get("bridges") or []
+    key = self._u_int(data, "key", 0, 15, 0)
+    if key is None:
+        return self._u_fail(bridges, "bad key(0..15)")
+    # ① دستور پروتکل Fail
+    self._u_send(bridges, 0x53, bytes([key]), "hide_fail_cmd")
+    # ② افکت Error قرمز (0x27 [04 FF 00 00])
+    return self._u_send(bridges, 0x27, bytes([0x04, 0xFF, 0x00, 0x00]), "hide_fail_effect")
+
+
+-----------------------------------------------------------------تغییر شماره 2
+📝 تغییرات مورد نیاز
+فایل ۱: action_game.py — اضافه کردن handler
+در متد on_service_event، یه شاخه جدید اضافه کن (بعد از action_idle):
+
+
+elif msg_type == "action_all_off":
+    return self._handle_all_off(data)
+و متد جدید رو بعد از _handle_idle اضافه کن:
+
+
+def _handle_all_off(self, data: dict) -> list:
+    """
+    AllOff=true → opcode 0x06 [0xFF] broadcast به همه بریج‌های هدف.
+    معادل دکمه «📴 خاموش همه» در تب دستورات سریع command_panel.
+    همه کانال‌های پیکسلی (CH1/CH2/CH3) روی همه نودهای بریج خاموش می‌شوند.
+    قانون پروتکل: broadcast 0xFF → expect_feedback=False.
+    """
+    bridges = data.get("bridges") or []
+    if not bridges:
+        return [{"ok": False, "reason": "bridges_required"}]
+    return self._u_send(bridges, 0x06, bytes([0xFF]), "all_off")
+فایل ۲: rest_api.py — اضافه کردن AllOff به _handle_nodes_set
+① در تابع _has_cmd (داخل _handle_nodes_set)، فیلد AllOff اضافه کن:
+
+
+def _has_cmd() -> bool:
+    if game == "Action":
+        return bool(general or set_key or body.get("AllOff"))  # ✅ AllOff اضافه شد
+    if game == "Hide":
+        return bool(general or body.get("Arm") or body.get("Start")
+                    or body.get("Fail") or body.get("Cancel")
+                    or body.get("Motion") or body.get("AllOff"))  # ✅
+    if game == "Vibron":
+        return bool(body.get("GridEffect") or body.get("TimerStart")
+                    or body.get("TimerStop") or general or set_key
+                    or body.get("AllOff"))  # ✅
+    if game == "Tesla":
+        return bool(body.get("TeslaStart") or ("LightningFx" in body)
+                    or body.get("DropArm") or body.get("DropCancel")
+                    or body.get("DropStatus") or body.get("AllOff"))  # ✅
+    return False
+② در بخش پردازش هر بازی (بعد از elif game == "Action": و بقیه)، یه بلوک مشترک قبل از همه اضافه کن:
+
+
+# ✅ AllOff: مشترک بین همه بازی‌ها — خاموشی کامل پیکسل‌ها (0x06 [FF])
+if body.get("AllOff"):
+    _fan("action_all_off", {}, "AllOff")
+
+elif game == "Action":
+    # ... کد موجود
